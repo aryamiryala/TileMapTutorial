@@ -9,40 +9,64 @@ class Overworld extends Phaser.Scene{
             frameWidth: 16, 
             frameHeight: 16
         })
-        this.load.image('tileset', 'tileset.png')
+        this.load.image('tilesetImage', 'tileset.png')
         this.load.tilemapTiledJSON('tilemapJSON', 'area01.json')
 
     }
 
     create(){
+
         const map = this.add.tilemap('tilemapJSON')
-        const tileset = map.addTilesetImage('tileset', 'tileset')
+        const tileset = map.addTilesetImage('tileset', 'tilesetImage')
+
+
+        //add layer
         const bgLayer = map.createLayer('Background', tileset, 0, 0)
         const terrainLayer = map.createLayer('Terrain', tileset, 0, 0)
         const treeLayer = map.createLayer('Trees', tileset, 0, 0)
 
-        this.slime = this.physics.add.sprite(32, 32, 'slime', 0)
+        const slimeSpawn = map.findObject('Spawns', obj => obj.name === 'slimeSpawn')
+
+        //add player
+        this.slime = this.physics.add.sprite(slimeSpawn.x, slimeSpawn.y, 'slime', 0, 0)
 
         this.anims.create({
-            key:'jiggle',
-            frameRate: 8,
-            repeat: -1,
-            frames: this.anims.generateFrameNumbers('slime', {start: 0, end: 1})
+            key: 'jiggle', 
+            frameRate: 8, 
+            repeat: -1, 
+            frames: this.anims.generateFrameNumbers('slime', { start: 0, end: 1})
         })
         this.slime.play('jiggle')
+
         this.slime.body.setCollideWorldBounds(true)
         this.VEL = 100
 
         this.cursors = this.input.keyboard.createCursorKeys()
-        this.cameras.main.setBounds(0, 0, map.widthInPixels,
-            map.heightInPixels)
+
+        this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels)
 
         this.cameras.main.startFollow(this.slime, true, 0.25, 0.25)
+
+        this.physics.world.bounds.setTo(0, 0, map.widthInPixels, map.heightInPixels)
+
+        terrainLayer.setCollisionByProperty({collides: true})
+
+        this.physics.add.collider(this.slime, terrainLayer)
+
+        treeLayer.setCollisionByProperty({collides: true})
+
+        this.physics.add.collider(this.slime, treeLayer)
+
+
+
+
+ 
     }
 
     update(){
 
         this.direction = new Phaser.Math.Vector2(0)
+
         if(this.cursors.left.isDown){
             this.direction.x = -1
         }
@@ -57,6 +81,8 @@ class Overworld extends Phaser.Scene{
         }
         this.direction.normalize()
         this.slime.setVelocity(this.VEL * this.direction.x, this.VEL * this.direction.y)
+
+        
 
     }
 
